@@ -1,0 +1,43 @@
+name: Build ML-4
+
+on:
+  push:
+    paths:
+      - "ML-4/**"
+      - ".github/workflows/build-ml4.yml"
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: cmake -S ML-4 -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+
+      - name: Build
+        run: cmake --build build --config Release --parallel 4
+
+      - name: Upload Windows VST3
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ML-4-Windows-VST3
+          path: build/ML4_artefacts/Release/VST3
+
+      - name: Upload macOS VST3 + AU
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ML-4-macOS
+          path: |
+            build/ML4_artefacts/Release/VST3
+            build/ML4_artefacts/Release/AU
